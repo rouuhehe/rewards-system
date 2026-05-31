@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,5 +35,19 @@ class RestaurantControllerTest {
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertEquals(saved.getId(), response.getBody().id());
         assertEquals("PUBLISHED", response.getBody().status());
+    }
+
+    @Test
+    void registerCena_usesCurrentTimeWhenRequestDateTimeIsNull() {
+        RestaurantController controller = new RestaurantController(registerTransactionUseCase);
+        TransactionRequest request = new TransactionRequest(95.5, "4111111111111111", "REST-002", null);
+        Transaction saved = new Transaction(UUID.randomUUID(), 95.5, "4111111111111111", "REST-002", LocalDateTime.now(), LocalDateTime.now());
+
+        when(registerTransactionUseCase.execute(org.mockito.ArgumentMatchers.any(Transaction.class))).thenReturn(saved);
+
+        var response = controller.registerCena(request);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertNotNull(response.getBody().dateTime());
     }
 }

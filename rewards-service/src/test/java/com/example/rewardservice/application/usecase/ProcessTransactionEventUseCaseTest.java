@@ -65,4 +65,51 @@ class ProcessTransactionEventUseCaseTest {
         verify(notificationPort).sendRewardNotification(savedAccount, savedOperation);
         verifyNoMoreInteractions(notificationPort);
     }
+
+    @Test
+    void execute_createsAccountWhenCardDoesNotExist() {
+        ProcessTransactionEventUseCase useCase = new ProcessTransactionEventUseCase(
+                rewardAccountRepositoryPort,
+                rewardOperationRepositoryPort,
+                notificationPort
+        );
+
+        TransactionEvent event = new TransactionEvent(
+                UUID.randomUUID(),
+                100.0,
+                "4111111111111111",
+                "REST-003",
+                null,
+                LocalDateTime.now()
+        );
+        RewardAccount savedAccount = new RewardAccount(UUID.randomUUID(), event.cardNumber(), 5.0, 1, event.dateTime(), LocalDateTime.now(), LocalDateTime.now());
+        RewardOperation savedOperation = new RewardOperation(UUID.randomUUID(), event.id(), event.cardNumber(), event.restaurantCode(), event.amount(), 5.0, "PROCESSED", "Recompensa calculada exitosamente", LocalDateTime.now());
+
+        when(rewardAccountRepositoryPort.findByCardNumber(event.cardNumber())).thenReturn(java.util.Optional.empty());
+        when(rewardAccountRepositoryPort.save(any(RewardAccount.class))).thenReturn(savedAccount);
+        when(rewardOperationRepositoryPort.save(any(RewardOperation.class))).thenReturn(savedOperation);
+
+        RewardOperation result = useCase.execute(event);
+
+        assertEquals(savedOperation, result);
+        verify(rewardAccountRepositoryPort).save(any(RewardAccount.class));
+        verify(rewardOperationRepositoryPort).save(any(RewardOperation.class));
+        verify(notificationPort).sendRewardNotification(savedAccount, savedOperation);
+    }
+
+    @Test
+    void execute_rejectsInvalidAmounts() {
+        ProcessTransactionEventUseCase useCase = new ProcessTransactionEventUseCase(
+                rewardAccountRepositoryPort,
+                rewardOperationRepositoryPort,
+                notificationPort
+        );
+
+        TransactionEvent event = new TransactionEvent(UUID.randomUUID(), 0.0, "4111111111111111", "REST-003", LocalDateTime.now(), LocalDateTime.now());
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> useCase.execute(event));
+
+        assertEquals("El monto de la transacción debe ser mayor a 0", exception.getMessage());
+        verifyNoInteractions(rewardAccountRepositoryPort, rewardOperationRepositoryPort, notificationPort);
+    }
 }

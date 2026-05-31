@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,5 +39,20 @@ class GetRewardAccountUseCaseTest {
 
         assertEquals(account, result.account());
         assertEquals(List.of(operation), result.operations());
+    }
+
+    @Test
+    void execute_createsEmptyAccountWhenCardDoesNotExist() {
+        GetRewardAccountUseCase useCase = new GetRewardAccountUseCase(rewardAccountRepositoryPort, rewardOperationRepositoryPort);
+        String cardNumber = "4111111111111111";
+
+        when(rewardAccountRepositoryPort.findByCardNumber(cardNumber)).thenReturn(java.util.Optional.empty());
+        when(rewardOperationRepositoryPort.findTop10ByCardNumberOrderByProcessedAtDesc(cardNumber)).thenReturn(List.of());
+
+        var result = useCase.execute(cardNumber);
+
+        assertEquals(cardNumber, result.account().getCardNumber());
+        assertEquals(0.0, result.account().getBalance());
+        assertTrue(result.operations().isEmpty());
     }
 }
