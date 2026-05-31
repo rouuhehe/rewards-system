@@ -1,6 +1,6 @@
 package com.example.restaurantservice.domain.port.outbound;
 
-import com.example.restaurantservice.domain.model.Transaction;
+import java.util.UUID;
 
 import com.example.restaurantservice.domain.model.Transaction;
 

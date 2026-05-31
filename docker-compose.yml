@@ -1,0 +1,93 @@
+services:
+  restaurant-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: restaurant_service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - restaurant-db-data-v15:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d restaurant_service"]
+      start_period: 30s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rewards-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: rewards_service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - rewards-db-data-v15:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d rewards_service"]
+      start_period: 30s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: students
+      RABBITMQ_DEFAULT_PASS: Ut3c2026
+      RABBITMQ_DEFAULT_VHOST: /
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      start_period: 45s
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  restaurant-service:
+    build:
+      context: ./restaurant-service
+    depends_on:
+      restaurant-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://restaurant-db:5432/restaurant_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: students
+      SPRING_RABBITMQ_PASSWORD: Ut3c2026
+      SPRING_RABBITMQ_VHOST: /
+    ports:
+      - "8080:8080"
+
+  rewards-service:
+    build:
+      context: ./rewards-service
+    depends_on:
+      rewards-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://rewards-db:5432/rewards_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: students
+      SPRING_RABBITMQ_PASSWORD: Ut3c2026
+      SPRING_RABBITMQ_VHOST: /
+    ports:
+      - "8081:8081"
+
+volumes:
+  restaurant-db-data-v15:
+  rewards-db-data-v15:
+  rabbitmq-data:

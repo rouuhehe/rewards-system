@@ -1,0 +1,6 @@
+projectKey=Yaritza_Lopez_t1
+serverUrl=https://sonarqube.ingsoftware.lat
+serverVersion=26.5.0.122743
+dashboardUrl=https://sonarqube.ingsoftware.lat/dashboard?id=Yaritza_Lopez_t1
+ceTaskId=afd8847a-7709-40e4-9108-cb3e9d0ddb55
+ceTaskUrl=https://sonarqube.ingsoftware.lat/api/ce/task?id=afd8847a-7709-40e4-9108-cb3e9d0ddb55
